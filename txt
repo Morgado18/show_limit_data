@@ -1,0 +1,107 @@
+========================= HTML ==============================
+
+<form>
+  <select name="dado_value" id="dado_value" onkeydown="show_dados()">
+    <option selected disabled value="">...</option>
+    <option value="10">10</option>
+    <option value="32">32</option>
+    <option value="64">64</option>
+    <option value="all">Tudo</option>
+  </select>
+</form>
+    <table>
+      <thead class="thead-dark">
+        <tr>
+          <th>ID</th>
+          <th>Banco</th>
+          <th>Instituição Solicitante</th>
+          <th>Identificação</th>
+          <th>Latitude</th>
+          <th>Longitude</th>
+          <th>
+              <center>
+                  +Info
+              </center>
+          </th>
+          <th colspan="2">Opções</th>
+        </tr>
+      </thead>
+      <tbody id="tableAtms">
+              <tr>
+            
+              </tr>
+      </tbody>
+    </table>
+
+========================= JS ==============================
+
+<script>
+  document.getElementById('dado_value').addEventListener('change', function(){ // verifica se o value de um elemento select é alterado
+      let value_inserido = this.value; //pega o value selecionado
+      $.ajax({
+          type: 'GET',
+          data:{
+              value: value_inserido
+          },
+          url: '{{route("admin.atm.show_data_limit")}}',
+          success: function(data){
+            /*  console.log(data) */
+             $("#tableAtms").html('') //elimina os dados que já estão na tabela
+             $.each(data.posto_atm, function(index, posto_atm){ //percorre o array
+              let trHtml = `
+                  <tr>
+                      <td>`+posto_atm['id']+`</td>
+                      <td>BANCO `+posto_atm['nomeBanco']+`</td>
+                      <td>`+posto_atm['nomeInstituicao']+`</td>
+                      <td>`+posto_atm['identificacao']+`</td>
+                      <td>`+posto_atm['latitude']+`</td>
+                      <td>`+posto_atm['longitude']+`</td>
+                      <td>
+                          <a class="text-light" href="">
+                              <button class="btn-info btn text-light" >
+                                  <i class="fa-regular fa-eye text-light"></i>
+                              </button>
+                          </a>
+                      </td>
+                      <td>...</td>
+                  </tr>
+              `
+              $('#tableAtms').append(trHtml) //adiciona os dados na tabela
+             })
+          }, error: function(error){
+              console.log(error)
+          }
+      })
+  })
+</script>
+
+========================= ROUTE ==============================
+
+Route::get('show_data_limit',['as'=>'admin.atm.show_data_limit','uses'=>'Admin\AtmController@show_data_limit']);
+
+========================= CONTROLLER ==============================
+
+    public function show_data_limit(Request $request){
+        $dado_value = $request->input('value'); // pega o value passado no data presente no code ajax
+        if($dado_value == 10){
+            $postos_atms['posto_atm'] = Posto_Atm::join('instituicao','instituicao.id', 'posto_atm.id_instituicao')
+                    ->join('banco', 'banco.id', 'posto_atm.id_banco')
+                    ->select('banco.nome as nomeBanco','instituicao.nome as nomeInstituicao','posto_atm.*')->take(10)->orderBy('id','desc')->get();
+        }else if($dado_value == 32){
+            $postos_atms['posto_atm'] = Posto_Atm::join('instituicao','instituicao.id', 'posto_atm.id_instituicao')
+                    ->join('banco', 'banco.id', 'posto_atm.id_banco')
+                    ->select('banco.nome as nomeBanco','instituicao.nome as nomeInstituicao','posto_atm.*')->take(32)->orderBy('id','desc')->get();
+        }else if($dado_value == 64){
+            $postos_atms['posto_atm'] = Posto_Atm::join('instituicao','instituicao.id', 'posto_atm.id_instituicao')
+                    ->join('banco', 'banco.id', 'posto_atm.id_banco')
+                    ->select('banco.nome as nomeBanco','instituicao.nome as nomeInstituicao','posto_atm.*')->take(64)->orderBy('id','desc')->get();
+        }else if($dado_value == 'all'){
+            $postos_atms['posto_atm'] = Posto_Atm::join('instituicao','instituicao.id', 'posto_atm.id_instituicao')
+                    ->join('banco', 'banco.id', 'posto_atm.id_banco')
+                    ->select('banco.nome as nomeBanco','instituicao.nome as nomeInstituicao','posto_atm.*')->orderBy('id','desc')->get();
+        }
+        return response()->json($postos_atms, 200); // code 200 => ok
+    }
+
+
+========================= © MORGADO ANDRADE DE MELO ==============================
